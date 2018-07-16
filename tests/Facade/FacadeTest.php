@@ -23,7 +23,7 @@ class FacadeTest extends TestCase
     /** @test */
     public function it_accepts_object_accessors()
     {
-        Fixture\ObjectFacade::foo();
+        $this->assertNull(Fixture\ObjectFacade::foo());
     }
 
     /** @test */

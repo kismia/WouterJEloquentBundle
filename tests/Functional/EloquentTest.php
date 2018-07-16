@@ -39,11 +39,12 @@ class EloquentTest extends KernelTestCase
             $table->timestamps();
         });
 
-        User::create([
+        $this->assertInstanceOf(User::class, User::create([
             'name'     => 'John Doe',
             'email'    => 'j.doe@example.com',
             'password' => 'pa$$word',
-        ]);
+        ]));
+
     }
 }
 

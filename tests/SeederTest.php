@@ -21,6 +21,9 @@ require_once __DIR__.'/Fixtures/ConsoleCommandFixture.php';
  */
 class SeederTest extends TestCase
 {
+    /**
+     * @var SeederTest_DummySeeder
+     */
     protected $subject;
     protected $container;
     protected $seeder;
@@ -39,7 +42,7 @@ class SeederTest extends TestCase
     {
         Promise::containerHasService($this->container, 'foo_service', $this->seeder->reveal());
 
-        $this->subject->resolve('foo_service');
+        $this->assertInstanceOf(Seeder::class, $this->subject->resolve('foo_service'));
     }
 
     /** @test */
