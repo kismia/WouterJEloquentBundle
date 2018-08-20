@@ -84,11 +84,11 @@ class Configuration implements ConfigurationInterface
                 ->ifTrue(function ($v) {
                     return is_array($v)
                         && !array_key_exists('connections', $v) && !array_key_exists('connection', $v)
-                        && count($v) !== count(array_diff(array_keys($v), ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky']));
+                        && count($v) !== count(array_diff(array_keys($v), ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky', 'options']));
                 })
                 ->then(function ($v) {
                     // Key that should be rewritten to the connection config
-                    $includedKeys = ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky'];
+                    $includedKeys = ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky', 'options'];
                     $connection = [];
                     foreach ($v as $key => $value) {
                         if (in_array($key, $includedKeys)) {
@@ -117,6 +117,11 @@ class Configuration implements ConfigurationInterface
                         ->end()
                         ->addDefaultsIfNotSet()
                         ->children()
+                            ->arrayNode('options')
+                                ->children()
+                                    ->scalarNode(\PDO::ATTR_PERSISTENT)->end()
+                                ->end()
+                            ->end()
                             ->scalarNode('driver')
                                 ->beforeNormalization()
                                     ->ifInArray(['sql server', 'postgres'])
