@@ -11,6 +11,8 @@
 
 namespace WouterJ\EloquentBundle\Command;
 
+use Illuminate\Console\OutputStyle;
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\HelperSet;
@@ -27,12 +29,19 @@ use Prophecy\Argument;
  */
 class MigrateCommandTest extends TestCase
 {
+    use SetUpTearDownTrait;
+
     private $migrator;
 
-    protected function setUp()
+    protected function doSetUp()
     {
         $this->migrator = $this->prophesize(Migrator::class);
-        $this->migrator->getNotes()->willReturn([]);
+        if (method_exists(Migrator::class, 'getNotes')) {
+            $this->migrator->getNotes()->willReturn([]);
+        } else {
+            $this->migrator->setOutput(Argument::type(OutputStyle::class))->willReturn();
+        }
+
         $this->migrator->paths()->willReturn([]);
     }
 
@@ -149,6 +158,10 @@ class MigrateCommandTest extends TestCase
     /** @test */
     public function it_outputs_migration_notes()
     {
+        if (!method_exists(Migrator::class, 'getNotes')) {
+            $this->markTestSkipped('Only applies to Illuminate <5.7');
+        }
+
         $command = new MigrateCommand($this->migrator->reveal(), __DIR__.'/migrations', 'dev');
 
         $this->migrator->getNotes()->willReturn([

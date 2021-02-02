@@ -11,6 +11,8 @@
 
 namespace WouterJ\EloquentBundle\Command;
 
+use Illuminate\Console\OutputStyle;
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use Symfony\Component\DependencyInjection\Container;
 use WouterJ\EloquentBundle\Promise;
 use WouterJ\EloquentBundle\Migrations\Migrator;
@@ -22,13 +24,20 @@ use Prophecy\Argument;
  */
 class MigrateResetCommandTest extends TestCase
 {
+    use SetUpTearDownTrait;
+
     private $command;
     private $migrator;
 
-    protected function setUp()
+    protected function doSetUp()
     {
         $this->migrator = $this->prophesize(Migrator::class);
-        $this->migrator->getNotes()->willReturn([]);
+        if (method_exists(Migrator::class, 'getNotes')) {
+            $this->migrator->getNotes()->willReturn([]);
+        } else {
+            $this->migrator->setOutput(Argument::type(OutputStyle::class))->willReturn();
+        }
+
         $this->migrator->paths()->willReturn([]);
         $this->migrator->setConnection(Argument::any())->willReturn();
         $this->migrator->repositoryExists()->willReturn(true);
@@ -119,6 +128,10 @@ class MigrateResetCommandTest extends TestCase
     /** @test */
     public function it_outputs_migration_notes()
     {
+        if (!method_exists(Migrator::class, 'getNotes')) {
+            $this->markTestSkipped('Only applies to Illuminate <5.7');
+        }
+
         $this->migrator->getNotes()->willReturn([
             'Rolled back: CreateFlightsTable',
             'Rolled back: SomethingToTest',

@@ -1,6 +1,10 @@
 Changelog
 =========
 
+ * Added Laravel 5.6, 5.7 and 5.8 support
+ * Dropped Symfony 2.8 support
+ * Dropped PHP 7.0 support
+
 1.0.2
 -----
 

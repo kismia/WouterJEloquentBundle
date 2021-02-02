@@ -11,6 +11,7 @@
 
 namespace WouterJ\EloquentBundle\Command;
 
+use Illuminate\Console\OutputStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class MigrateRollbackCommand extends BaseMigrateCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('eloquent:migrate:rollback')
             ->setDescription('Rollback the last database migration')
@@ -42,21 +43,31 @@ EOH
         ;
     }
 
-    protected function execute(InputInterface $i, OutputInterface $o)
+    protected function execute(InputInterface $i, OutputInterface $o): int
     {
         if (!$i->getOption('force') && !$this->askConfirmationInProd($i, $o)) {
-            return;
+            return 1;
         }
 
         $migrator = $this->getMigrator();
         $migrator->setConnection($i->getOption('database'));
+
+        $illuminateLte56 = method_exists($migrator, 'getNotes');
+        if (!$illuminateLte56) {
+            $migrator->setOutput(new OutputStyle($i, $o));
+        }
+
         $migrator->rollback($this->getMigrationPaths($i), [
             'pretend' => $i->getOption('pretend'),
             'step'    => (int) $i->getOption('step'),
         ]);
 
-        foreach ($migrator->getNotes() as $note) {
-            $o->writeln($note);
+        if ($illuminateLte56) {
+            foreach ($migrator->getNotes() as $note) {
+                $o->writeln($note);
+            }
         }
+
+        return 0;
     }
 }

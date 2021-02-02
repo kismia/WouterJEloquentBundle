@@ -9,10 +9,12 @@
  * file that was distributed with this source code.
  */
 
+use AppBundle\Controller\FormController;
 use AppBundle\Model\UserObserver;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\HttpKernel\Log\Logger;
 
 /**
  * @author Wouter J <wouter@wouterj.nl>
@@ -40,7 +42,6 @@ class TestKernel extends Kernel
             $container->loadFromExtension('framework', [
                 'secret' => 'abc123',
                 'router' => ['resource' => __DIR__.'/routes.yml'],
-                'templating' => (Kernel::MAJOR_VERSION < 2 ? ['engines' => ['twig']] : false),
                 'validation' => ['enable_annotations' => true],
                 'annotations' => true,
                 'test'   => true,
@@ -50,6 +51,8 @@ class TestKernel extends Kernel
 
             $container->loadFromExtension('twig', [
                 'paths' => [__DIR__.'/templates'],
+                'exception_controller' => null,
+                'strict_variables' => $container->getParameter('kernel.debug'),
             ]);
 
             $container->loadFromExtension('wouterj_eloquent', [
@@ -70,6 +73,15 @@ class TestKernel extends Kernel
             $container->register('app.user_observer', UserObserver::class)
                 ->addTag('wouterj_eloquent.observer')
                 ->setPublic(true);
+            $container->register(FormController::class, FormController::class)
+                ->addTag('controller.service_arguments')
+                ->setPublic(true)
+                ->setAutowired(true);
+
+            if (class_exists(Logger::class)) {
+                $container->register('logger', Logger::class)
+                    ->setArguments([null, '/dev/null']);
+            }
         });
     }
 }

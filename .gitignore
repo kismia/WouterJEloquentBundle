@@ -3,4 +3,4 @@
 composer.lock
 cache
 *.sqlite
-.idea
+.phpunit.result.cache
