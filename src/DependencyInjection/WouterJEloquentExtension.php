@@ -34,10 +34,11 @@ class WouterJEloquentExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../../Resources/config'));
+        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../../config'));
 
         $loader->load('migrations.xml');
         $loader->load('form.xml');
+        $loader->load('maker.xml');
 
         $this->loadCapsule($config, $container, $loader);
         $this->loadEloquent($config, $container, $loader);

@@ -1,8 +1,8 @@
 <?php
 
-use WouterJ\EloquentBundle\Facade\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use WouterJ\EloquentBundle\Facade\Schema;
 
 class CreateMigration extends Migration
 {
@@ -14,7 +14,7 @@ class CreateMigration extends Migration
     public function up()
     {
         Schema::create('SomeTable', function (Blueprint $table) {
-            $table->increments('id');
+            $table->id();
             $table->timestamps();
         });
     }

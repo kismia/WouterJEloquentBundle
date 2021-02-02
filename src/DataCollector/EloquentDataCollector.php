@@ -22,21 +22,18 @@ class EloquentDataCollector extends DataCollector
     private $capsule;
     /** @var QueryListener */
     private $queryListener;
-    /** @var SymfonyVersion */
-    private $symfonyVersion;
-
 
     public function __construct(Manager $capsule, QueryListener $queryListener)
     {
         $this->capsule = $capsule;
         $this->queryListener = $queryListener;
-        $this->symfonyVersion = floatval(\Symfony\Component\HttpKernel\Kernel::VERSION);
     }
 
-    public function collect(Request $request, Response $response, \Exception $exception = null)
+    public function collect(Request $request, Response $response, ?\Throwable $exception = null)
     {
+        /** @psalm-suppress UndefinedInterfaceMethod */
         $connections = array_map(function ($config) {
-            return ($this->symfonyVersion < 3.2) ? $this->varToString($config) : $this->cloneVar($config);
+            return $this->cloneVar($config);
         }, $this->capsule->getContainer()['config']['database.connections']);
 
         $usedConnections = [];
@@ -47,11 +44,7 @@ class EloquentDataCollector extends DataCollector
         $queries = $this->queryListener->getQueriesByConnection();
         foreach ($queries as $connectionName => $q) {
             foreach ($q as $i => $query) {
-                if ($this->symfonyVersion < 3.2) {
-                    $queries[$connectionName][$i]['bindings'] = $this->varToString($query['bindings']);
-                } else {
-                    $queries[$connectionName][$i]['bindings'] = $this->cloneVar($query['bindings']);
-                }
+                $queries[$connectionName][$i]['bindings'] = $this->cloneVar($query['bindings']);
             }
         }
 
@@ -84,7 +77,7 @@ class EloquentDataCollector extends DataCollector
 
     public function queries()
     {
-        return count($this->data['queries']) ? call_user_func_array('array_merge', $this->data['queries']) : [];
+        return count($this->data['queries']) ? call_user_func_array('array_merge', array_values($this->data['queries'])) : [];
     }
 
     public function getName()

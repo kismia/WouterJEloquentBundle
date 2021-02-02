@@ -44,30 +44,21 @@ EOT
         ;
     }
 
-    public function execute(InputInterface $i, OutputInterface $o): int
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$i->getOption('force') && !$this->askConfirmationInProd($i, $o)) {
+        if (!$input->getOption('force') && !$this->askConfirmationInProd($input, $output)) {
             return 1;
         }
 
-        $illuminateLte56 = method_exists($this->getMigrator(), 'getNotes');
-        if (!$illuminateLte56) {
-            $this->getMigrator()->setOutput(new OutputStyle($i, $o));
-        }
+        $this->getMigrator()->setOutput(new OutputStyle($input, $output));
 
-        $this->getMigrator()->run($this->getMigrationPaths($i), [
-            'pretend' => $i->getOption('pretend'),
-            'step'    => $i->getOption('step'),
+        $this->getMigrator()->run($this->getMigrationPaths($input), [
+            'pretend' => $input->getOption('pretend'),
+            'step'    => $input->getOption('step'),
         ]);
 
-        if ($illuminateLte56) {
-            foreach ($this->getMigrator()->getNotes() as $note) {
-                $o->writeln($note);
-            }
-        }
-
-        if ($i->getOption('seed')) {
-            $this->call($o, 'eloquent:seed', ['--force' => true]);
+        if ($input->getOption('seed')) {
+            $this->call($output, 'eloquent:seed', ['--force' => true]);
         }
 
         return 0;

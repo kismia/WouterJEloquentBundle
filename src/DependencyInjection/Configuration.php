@@ -29,9 +29,11 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder('wouterj_eloquent');
+        /** @psalm-suppress RedundantCondition */
         if (method_exists($treeBuilder, 'getRootNode')) {
             $root = $treeBuilder->getRootNode();
         } else {
+            /** @psalm-suppress UndefinedMethod */
             $root = $treeBuilder->root('wouterj_eloquent');
         }
 
@@ -88,11 +90,11 @@ class Configuration implements ConfigurationInterface
                 ->ifTrue(function ($v) {
                     return is_array($v)
                         && !array_key_exists('connections', $v) && !array_key_exists('connection', $v)
-                        && count($v) !== count(array_diff(array_keys($v), ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky', 'options']));
+                        && count($v) !== count(array_diff(array_keys($v), ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky', 'schema', 'options']));
                 })
                 ->then(function ($v) {
                     // Key that should be rewritten to the connection config
-                    $includedKeys = ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky', 'options'];
+                    $includedKeys = ['driver', 'host', 'port', 'database', 'username', 'password', 'charset', 'collation', 'prefix', 'read', 'write', 'sticky', 'schema', 'options'];
                     $connection = [];
                     foreach ($v as $key => $value) {
                         if (in_array($key, $includedKeys)) {
@@ -144,17 +146,31 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue('mysql')
                             ->end()
                             ->scalarNode('host')->defaultValue('localhost')->end()
-                            ->scalarNode('port')->defaultValue(null)->end()
-                            ->scalarNode('database')->isRequired()->end()
+                            ->scalarNode('port')->defaultNull()->end()
+                            ->scalarNode('database')->defaultNull()->end()
                             ->scalarNode('username')->defaultValue('root')->end()
                             ->scalarNode('password')->defaultValue('')->end()
                             ->scalarNode('charset')->defaultValue('utf8')->end()
                             ->scalarNode('collation')->defaultValue('utf8_unicode_ci')->end()
+                            ->scalarNode('schema')->end()
                             ->booleanNode('sticky')->defaultValue(true)->end()
                             ->scalarNode('prefix')->defaultValue('')->end()
                             ->arrayNode('write')
+                                ->validate()
+                                    ->ifTrue(function ($v) {
+                                        return $v['host'] === [];
+                                    })
+                                    ->then(function ($v) {
+                                        unset($v['host']);
+
+                                        return $v;
+                                    })
+                                ->end()
                                 ->children()
                                     ->arrayNode('host')
+                                        ->beforeNormalization()
+                                            ->ifString()->then(function ($v) { return [$v]; })
+                                        ->end()
                                         ->prototype('scalar')->end()
                                     ->end()
                                     ->scalarNode('port')->end()
@@ -165,10 +181,23 @@ class Configuration implements ConfigurationInterface
                                     ->scalarNode('collation')->end()
                                     ->scalarNode('prefix')->end()
                                 ->end()
-                            ->end()
+                            ->end() // write
                             ->arrayNode('read')
+                                ->validate()
+                                    ->ifTrue(function ($v) {
+                                        return $v['host'] === [];
+                                    })
+                                    ->then(function ($v) {
+                                        unset($v['host']);
+
+                                        return $v;
+                                    })
+                                ->end()
                                 ->children()
                                     ->arrayNode('host')
+                                        ->beforeNormalization()
+                                            ->ifString()->then(function ($v) { return [$v]; })
+                                        ->end()
                                         ->prototype('scalar')->end()
                                     ->end()
                                     ->scalarNode('port')->end()
@@ -179,7 +208,7 @@ class Configuration implements ConfigurationInterface
                                     ->scalarNode('collation')->end()
                                     ->scalarNode('prefix')->end()
                                 ->end()
-                            ->end()
+                            ->end() // read
                         ->end()
                     ->end()
                 ->end() // connections

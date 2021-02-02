@@ -43,30 +43,20 @@ EOH
         ;
     }
 
-    protected function execute(InputInterface $i, OutputInterface $o): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$i->getOption('force') && !$this->askConfirmationInProd($i, $o)) {
+        if (!$input->getOption('force') && !$this->askConfirmationInProd($input, $output)) {
             return 1;
         }
 
         $migrator = $this->getMigrator();
-        $migrator->setConnection($i->getOption('database'));
+        $migrator->setConnection($input->getOption('database'));
+        $migrator->setOutput(new OutputStyle($input, $output));
 
-        $illuminateLte56 = method_exists($migrator, 'getNotes');
-        if (!$illuminateLte56) {
-            $migrator->setOutput(new OutputStyle($i, $o));
-        }
-
-        $migrator->rollback($this->getMigrationPaths($i), [
-            'pretend' => $i->getOption('pretend'),
-            'step'    => (int) $i->getOption('step'),
+        $migrator->rollback($this->getMigrationPaths($input), [
+            'pretend' => $input->getOption('pretend'),
+            'step'    => (int) $input->getOption('step'),
         ]);
-
-        if ($illuminateLte56) {
-            foreach ($migrator->getNotes() as $note) {
-                $o->writeln($note);
-            }
-        }
 
         return 0;
     }
