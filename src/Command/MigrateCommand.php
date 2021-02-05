@@ -11,7 +11,7 @@
 
 namespace WouterJ\EloquentBundle\Command;
 
-use Symfony\Component\Console\Input\ArrayInput;
+use Illuminate\Console\OutputStyle;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class MigrateCommand extends BaseMigrateCommand
 {
-    public function configure()
+    public function configure(): void
     {
         $this->setName('eloquent:migrate')
             ->setDescription('Executes a migration.')
@@ -44,23 +44,23 @@ EOT
         ;
     }
 
-    public function execute(InputInterface $i, OutputInterface $o)
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$i->getOption('force') && !$this->askConfirmationInProd($i, $o)) {
-            return;
+        if (!$input->getOption('force') && !$this->askConfirmationInProd($input, $output)) {
+            return 1;
         }
 
-        $this->getMigrator()->run($this->getMigrationPaths($i), [
-            'pretend' => $i->getOption('pretend'),
-            'step'    => $i->getOption('step'),
+        $this->getMigrator()->setOutput(new OutputStyle($input, $output));
+
+        $this->getMigrator()->run($this->getMigrationPaths($input), [
+            'pretend' => $input->getOption('pretend'),
+            'step'    => $input->getOption('step'),
         ]);
 
-        foreach ($this->getMigrator()->getNotes() as $note) {
-            $o->writeln($note);
+        if ($input->getOption('seed')) {
+            $this->call($output, 'eloquent:seed', ['--force' => true]);
         }
 
-        if ($i->getOption('seed')) {
-            $this->call($o, 'eloquent:seed', ['--force' => true]);
-        }
+        return 0;
     }
 }

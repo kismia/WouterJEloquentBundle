@@ -11,7 +11,9 @@
 
 namespace WouterJ\EloquentBundle;
 
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use WouterJ\EloquentBundle\MockeryTrait;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__.'/Fixtures/ConsoleCommandFixture.php';
@@ -21,28 +23,33 @@ require_once __DIR__.'/Fixtures/ConsoleCommandFixture.php';
  */
 class SeederTest extends TestCase
 {
+    use SetUpTearDownTrait, MockeryTrait {
+        MockeryTrait::doTearDown insteadof SetUpTearDownTrait;
+    }
+
     /**
      * @var SeederTest_DummySeeder
      */
     protected $subject;
     protected $container;
-    protected $seeder;
 
-    protected function setUp()
+    protected function doSetUp()
     {
-        $this->container = $this->prophesize(ContainerInterface::class);
-        $this->seeder = $this->prophesize(Seeder::class);
+        $this->container = \Mockery::mock(ContainerInterface::class);
 
         $this->subject = new SeederTest_DummySeeder();
-        $this->subject->setSfContainer($this->container->reveal());
+        $this->subject->setSfContainer($this->container);
     }
 
     /** @test */
     public function it_resolves_the_seeder_using_the_container()
     {
-        Promise::containerHasService($this->container, 'foo_service', $this->seeder->reveal());
+        $seeder = \Mockery::mock(Seeder::class);
+        $seeder->allows()->setSfContainer()->with($this->container);
 
-        $this->assertInstanceOf(Seeder::class, $this->subject->resolve('foo_service'));
+        Promise::containerHasService($this->container, 'foo_service', $seeder);
+
+        $this->assertEquals($seeder, $this->subject->resolve('foo_service'));
     }
 
     /** @test */

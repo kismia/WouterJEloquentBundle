@@ -3,17 +3,19 @@
 namespace AppBundle\Controller;
 
 use AppBundle\Model\CastingUser;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Twig\Environment;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class FormController extends Controller
+class FormController
 {
-    public function create(Request $request)
+    public function create(Request $request, FormFactoryInterface $formFactory, Environment $twig)
     {
         $user = new CastingUser();
-        $form = $this->createFormBuilder($user)
+        $form = $formFactory->createBuilder(FormType::class, $user)
             ->add('name')
             ->add('password')
             ->add('date_of_birth')
@@ -28,6 +30,6 @@ class FormController extends Controller
             return new Response('Successfully created user!');
         }
 
-        return $this->render('form/create.twig', ['form' => $form->createView()]);
+        return new Response($twig->render('form/create.twig', ['form' => $form->createView()]));
     }
 }

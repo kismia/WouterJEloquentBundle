@@ -1,0 +1,99 @@
+name: Tests
+
+on:
+  push:
+    branches: [2.x, 1.x]
+  pull_request:
+    branches: [2.x, 1.x]
+  schedule:
+    - cron: '3 2 1 * *'
+
+env:
+  SYMFONY_DEPRECATIONS_HELPER: "max[direct]=0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    continue-on-error: ${{ matrix.experimental }}
+    name: '${{ matrix.deps }} deps: PHP=${{ matrix.php }}, Symfony=${{ matrix.symfony }}, Laravel=${{ matrix.laravel }}'
+    strategy:
+      matrix:
+        include:
+          - deps: 'low'
+            php: 7.2
+            experimental: false
+
+          - deps: 'stable'
+            php: 8.0
+            symfony: '5.x'
+            laravel: '7.x'
+            experimental: false
+
+          - deps: 'stable'
+            php: 8.0
+            symfony: '5.x'
+            laravel: '8.x'
+            experimental: false
+
+          - deps: 'dev'
+            php: 8.1
+            experimental: true
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: xml, pdo_sqlite
+          tools: "composer:v2"
+
+      - name: Set-up env variables
+        id: ctx
+        run: |
+          echo "::set-output name=composer_dir::$(composer config cache-files-dir)"
+
+          case "${{ matrix.deps }}" in
+            "low")
+              echo "COMPOSER_FLAGS=--prefer-lowest" >> $GITHUB_ENV
+              echo "SYMFONY_DEPRECATIONS_HELPER=disabled=1" >> $GITHUB_ENV
+
+              ;;
+            "dev")
+              echo "COMPOSER_FLAGS=--ignore-platform-req=php" >> $GITHUB_ENV
+              echo "SYMFONY_DEPRECATIONS_HELPER=max[total]=999" >> $GITHUB_ENV
+
+              perl -pi -e "s/^}\$/,\"minimum-stability\":\"dev\"}/" composer.json
+
+              ;;
+            *)
+              echo "SYMFONY_REQUIRE=$(echo '${{ matrix.symfony }}' | tr x \\*)" >> $GITHUB_ENV
+              echo "LARAVEL_REQUIRE=$(echo '${{ matrix.laravel }}' | tr x \\*)" >> $GITHUB_ENV
+          esac
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.ctx.outputs.composer_dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}
+
+      - name: Install dependencies
+        run: |
+          composer global require --no-progress --no-scripts --no-plugins symfony/flex
+          if [ "$LARAVEL_REQUIRE" != "" ]; then composer require illuminate/database:$LARAVEL_REQUIRE; fi
+          composer update --prefer-dist --no-progress $COMPOSER_FLAGS
+          ./vendor/bin/simple-phpunit install
+
+      - name: Show info
+        run: |
+          echo "$(php --version)"
+          echo ""
+          echo "$(php tests/Functional/app/bin/console --version)"
+
+      - name: Run test suite
+        run: ./vendor/bin/simple-phpunit
+
+      - name: Run static analysis
+        run: ./vendor/bin/psalm

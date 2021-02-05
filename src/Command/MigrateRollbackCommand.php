@@ -11,6 +11,7 @@
 
 namespace WouterJ\EloquentBundle\Command;
 
+use Illuminate\Console\OutputStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class MigrateRollbackCommand extends BaseMigrateCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('eloquent:migrate:rollback')
             ->setDescription('Rollback the last database migration')
@@ -42,21 +43,21 @@ EOH
         ;
     }
 
-    protected function execute(InputInterface $i, OutputInterface $o)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$i->getOption('force') && !$this->askConfirmationInProd($i, $o)) {
-            return;
+        if (!$input->getOption('force') && !$this->askConfirmationInProd($input, $output)) {
+            return 1;
         }
 
         $migrator = $this->getMigrator();
-        $migrator->setConnection($i->getOption('database'));
-        $migrator->rollback($this->getMigrationPaths($i), [
-            'pretend' => $i->getOption('pretend'),
-            'step'    => (int) $i->getOption('step'),
+        $migrator->setConnection($input->getOption('database'));
+        $migrator->setOutput(new OutputStyle($input, $output));
+
+        $migrator->rollback($this->getMigrationPaths($input), [
+            'pretend' => $input->getOption('pretend'),
+            'step'    => (int) $input->getOption('step'),
         ]);
 
-        foreach ($migrator->getNotes() as $note) {
-            $o->writeln($note);
-        }
+        return 0;
     }
 }

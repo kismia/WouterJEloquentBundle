@@ -66,13 +66,7 @@ class TestCommand
         }
 
         if ('' !== $this->inputStream) {
-            if (method_exists($this->tester, 'setInputs')) {
-                $this->tester->setInputs(explode($this->inputStream, "\n"));
-            } else {
-                // todo Remove if Symfony <3.2 support is dropped
-                $this->command->getHelper('question')
-                    ->setInputStream($this->getInputStream($this->inputStream));
-            }
+            $this->tester->setInputs(explode($this->inputStream, "\n"));
         }
 
         $this->tester->execute(array_merge($this->options, $this->arguments), ['decorated' => false]);
@@ -87,14 +81,14 @@ class TestCommand
 
     public function outputs($expected)
     {
-        Assert::assertContains($expected, $this->tester->getDisplay(true));
+        Assert::assertStringContainsString($expected, $this->tester->getDisplay(true));
 
         return $this;
     }
 
     public function doesNotOutput($notExpected)
     {
-        Assert::assertNotContains($notExpected, $this->tester->getDisplay(true));
+        Assert::assertStringNotContainsString($notExpected, $this->tester->getDisplay(true));
 
         return $this;
     }

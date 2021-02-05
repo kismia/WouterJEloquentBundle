@@ -11,6 +11,7 @@
 
 namespace WouterJ\EloquentBundle\Command;
 
+use Illuminate\Console\OutputStyle;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class MigrateResetCommand extends BaseMigrateCommand
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this->setName('eloquent:migrate:reset')
             ->setDescription('Rollback all database migrations')
@@ -41,25 +42,24 @@ EOH
         ;
     }
 
-    protected function execute(InputInterface $i, OutputInterface $o)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!$i->getOption('force') && !$this->askConfirmationInProd($i, $o)) {
-            return;
+        if (!$input->getOption('force') && !$this->askConfirmationInProd($input, $output)) {
+            return 1;
         }
 
         $migrator = $this->getMigrator();
-        $migrator->setConnection($i->getOption('database'));
+        $migrator->setConnection($input->getOption('database'));
+        $migrator->setOutput(new OutputStyle($input, $output));
 
         if (!$migrator->repositoryExists()) {
-            $o->writeln('<error>Migration table not found.</>');
+            $output->writeln('<error>Migration table not found.</>');
 
             return 1;
         }
 
-        $migrator->reset($this->getMigrationPaths($i), $i->getOption('pretend'));
+        $migrator->reset($this->getMigrationPaths($input), $input->getOption('pretend'));
 
-        foreach ($migrator->getNotes() as $note) {
-            $o->writeln($note);
-        }
+        return 0;
     }
 }

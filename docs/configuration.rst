@@ -14,6 +14,7 @@ Full configuration
                 database:  ~     # the only required option
                 driver:    mysql
                 host:      localhost
+                port:      null
                 username:  root
                 password:  ''
                 charset:   utf8
@@ -23,9 +24,23 @@ Full configuration
                 options:
                   !php/const PDO::ATTR_PERSISTENT: true # enable persistent connection
                 read:
-                  host: ['localhost']
+                    host:      null
+                    port:      null
+                    database:  null
+                    username:  null
+                    password:  null
+                    charset:   null
+                    collation: null
+                    prefix:    null
                 write:
-                  host: ['localhost']
+                    host:      null
+                    port:      null
+                    database:  null
+                    username:  null
+                    password:  null
+                    charset:   null
+                    collation: null
+                    prefix:    null
         default_connection: default
         eloquent: false
         aliases: false
@@ -99,8 +114,8 @@ have to set the ``eloquent`` option to ``true``:
 Aliases
 -------
 
-The EloquentBundle provides two facades: ``DB`` and ``Schema``. You can also
-alias these facades, which means that you can always use ``DB`` and ``Schema``
+The EloquentBundle provides two facades: ``Db`` and ``Schema``. You can also
+alias these facades, which means that you can always use ``Db`` and ``Schema``
 directly, without including a ``use`` statement.
 
 You can activate both facades to be aliases by setting ``aliases`` to
@@ -113,7 +128,7 @@ You can activate both facades to be aliases by setting ``aliases`` to
         # ...
         aliases: true
 
-You can also specify either ``DB`` or ``Schema`` to be aliased:
+You can also specify either ``Db`` or ``Schema`` to be aliased:
 
 .. code-block:: yaml
 

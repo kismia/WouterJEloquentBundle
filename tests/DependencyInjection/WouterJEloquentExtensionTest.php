@@ -11,6 +11,8 @@
 
 namespace WouterJ\EloquentBundle\DependencyInjection;
 
+use Symfony\Bridge\PhpUnit\SetUpTearDownTrait;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use WouterJ\EloquentBundle\EventListener\EloquentInitializer;
 use WouterJ\EloquentBundle\EventListener\FacadeInitializer;
@@ -24,9 +26,11 @@ use WouterJ\EloquentBundle\WouterJEloquentBundle;
  */
 abstract class WouterJEloquentExtensionTest extends TestCase
 {
+    use SetUpTearDownTrait;
+
     protected $container;
 
-    protected function setUp()
+    protected function doSetUp()
     {
         $this->container = new ContainerBuilder();
         $this->container->setParameter('kernel.root_dir', sys_get_temp_dir());
@@ -69,10 +73,14 @@ abstract class WouterJEloquentExtensionTest extends TestCase
         $this->assertEquals('connection_1', $this->container->getParameter('wouterj_eloquent.default_connection'));
 
         $connectionCalls = array_values(array_map(
-            function ($c) { return $c[1]; },
+            function ($c) {
+                return $c[1];
+            },
             array_filter(
                 $this->container->getDefinition('wouterj_eloquent')->getMethodCalls(),
-                function ($c) { return $c[0] === 'addConnection'; }
+                function ($c) {
+                    return $c[0] === 'addConnection';
+                }
             )
         ));
         $this->assertEquals([
@@ -99,6 +107,7 @@ abstract class WouterJEloquentExtensionTest extends TestCase
                 'collation' => 'utf8_unicode_ci',
                 'sticky' => true,
                 'prefix' => 'symfo_',
+                'schema' => 'schema1',
             ], 'connection_1'],
         ], $connectionCalls);
     }
@@ -113,11 +122,12 @@ abstract class WouterJEloquentExtensionTest extends TestCase
 
     /**
      * @test
-     * @expectedException \Symfony\Component\Config\Definition\Exception\InvalidConfigurationException
-     * @expectedExceptionMessage At least one connection must be configured
      */
     public function it_requires_at_least_one_connection()
     {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('At least one connection must be configured');
+
         $this->load('no_connection');
     }
 
